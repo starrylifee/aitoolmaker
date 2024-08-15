@@ -12,6 +12,8 @@ hide_github_icon = """
     </style>
 """
 
+st.markdown(hide_github_icon, unsafe_allow_html=True)
+
 # 홈 화면 제목
 st.title("🎓 교사용 교육 도구 홈")
 
