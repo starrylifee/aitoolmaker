@@ -88,9 +88,12 @@ else:
     # 교사가 프롬프트 생성 방법 선택
     option = st.selectbox("프롬프트 생성 방법을 선택하세요:", ["직접 입력", "인공지능 사용"])
 
+    # final_prompt 변수를 미리 초기화
+    final_prompt = ""
+
     if option == "직접 입력":
         # 교사가 직접 입력하는 경우 기본 예제를 제공
-        example_prompt = "예시: 너는 A활동을 돕는 보조교사 입니다. 학생이 B를 입력하면, C를 할 수 있도록 도움을 주세요.."
+        example_prompt = "예시: 너는 A활동을 돕는 보조교사 입니다. 학생이 B를 입력하면, C를 할 수 있도록 도움을 주세요."
         final_prompt = st.text_area("✏️ 직접 입력할 프롬프트:", example_prompt, height=300)
     else:
         # 교사가 주제를 입력
@@ -113,8 +116,8 @@ else:
             # 교사가 프롬프트를 수정할 수 있도록 제공
             final_prompt = st.text_area("✏️ 인공지능이 만든 프롬프트를 살펴보고 직접 수정하세요:", generated_prompt, height=300)
 
-        # final_prompt와 activity_code를 세션 상태에 저장
-        st.session_state['final_prompt'] = final_prompt
+    # final_prompt와 activity_code를 세션 상태에 저장
+    st.session_state['final_prompt'] = final_prompt
 
     if st.button("💾 프롬프트를 서버에 저장") and activity_code:
         # 세션에서 저장된 값을 사용하여 Google Sheets에 데이터 추가
