@@ -31,7 +31,6 @@ hide_menu_style = """
     </script>
 """
 st.markdown(hide_menu_style, unsafe_allow_html=True)
-
 # OpenAI API 클라이언트 초기화
 client = OpenAI(api_key=st.secrets["api"]["keys"][0])
 
@@ -88,9 +87,6 @@ else:
     # 교사가 프롬프트 생성 방법 선택
     option = st.selectbox("프롬프트 생성 방법을 선택하세요:", ["직접 입력", "인공지능 사용"])
 
-    # final_prompt 변수를 미리 초기화
-    final_prompt = ""
-
     if option == "직접 입력":
         # 교사가 직접 입력하는 경우 기본 예제를 제공
         example_prompt = "예시: 너는 A활동을 돕는 보조교사 입니다. 학생이 B를 입력하면, C를 할 수 있도록 도움을 주세요."
@@ -98,6 +94,9 @@ else:
     else:
         # 교사가 주제를 입력
         input_topic = st.text_input("📚 프롬프트 주제 또는 키워드를 입력하세요:", "")
+
+            # 기본값 설정
+        final_prompt = ""
 
         if st.button("✨ 인공지능아 프롬프트를 만들어줘") and activity_code:
             # 교사의 입력을 바탕으로 GPT에게 프롬프트 생성 요청
@@ -116,8 +115,8 @@ else:
             # 교사가 프롬프트를 수정할 수 있도록 제공
             final_prompt = st.text_area("✏️ 인공지능이 만든 프롬프트를 살펴보고 직접 수정하세요:", generated_prompt, height=300)
 
-    # final_prompt와 activity_code를 세션 상태에 저장
-    st.session_state['final_prompt'] = final_prompt
+        # final_prompt와 activity_code를 세션 상태에 저장
+        st.session_state['final_prompt'] = final_prompt
 
     if st.button("💾 프롬프트를 서버에 저장") and activity_code:
         # 세션에서 저장된 값을 사용하여 Google Sheets에 데이터 추가
