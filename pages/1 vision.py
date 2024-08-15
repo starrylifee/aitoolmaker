@@ -7,17 +7,30 @@ from datetime import datetime
 import json
 
 # Streamlit의 기본 메뉴와 푸터 숨기기
-hide_github_icon = """
+hide_menu_style = """
     <style>
-    .css-1jc7ptx, .e1ewe7hr3, .viewerBadge_container__1QSob,
-    .styles_viewerBadge__1yB5_, .viewerBadge_link__1S137,
-    .viewerBadge_text__1JaDK{ display: none; }
-    #MainMenu{ visibility: hidden; }
-    footer { visibility: hidden; }
-    header { visibility: hidden; }
+    #MainMenu {visibility: hidden; }
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
     </style>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var mainMenu = document.getElementById('MainMenu');
+        if (mainMenu) {
+            mainMenu.style.display = 'none';
+        }
+        var footer = document.getElementsByTagName('footer')[0];
+        if (footer) {
+            footer.style.display = 'none';
+        }
+        var header = document.getElementsByTagName('header')[0];
+        if (header) {
+            header.style.display = 'none';
+        }
+    });
+    </script>
 """
-st.markdown(hide_github_icon, unsafe_allow_html=True)
+st.markdown(hide_menu_style, unsafe_allow_html=True)
 
 # OpenAI API 클라이언트 초기화
 client = OpenAI(api_key=st.secrets["api"]["keys"][0])
@@ -53,12 +66,12 @@ else:
     worksheet = spreadsheet.sheet1
 
     # 교사용 인터페이스
-    st.title("🎓 교사용 이미지분석 프롬프트 생성 도구")
+    st.title("🎓 교사용 이미지 분석 프롬프트 생성 도구")
 
     st.markdown("""
-    **안내:** 이 도구를 사용하여 이미지분석 API를 활용한 교육용 프롬프트를 쉽게 생성할 수 있습니다. 아래의 단계를 따라 입력해 주세요.
+    **안내:** 이 도구를 사용하여 이미지 분석 API를 활용한 교육용 프롬프트를 쉽게 생성할 수 있습니다. 아래의 단계를 따라 입력해 주세요.
     1. **활동 코드**: 학생들이 입력할 고유 코드를 설정합니다. (숫자는 포함할 수 없습니다.)
-    2. **프롬프트 주제**: 이미지분석 API를 사용하여 생성할 프롬프트의 주제를 입력합니다.
+    2. **프롬프트 주제**: 이미지 분석 API를 사용하여 생성할 프롬프트의 주제를 입력합니다.
     3. **프롬프트 생성**: 인공지능이 생성한 프롬프트를 확인하고 필요에 따라 수정합니다.
     4. **프롬프트 저장**: 최종 프롬프트를 저장하여 서버에 추가합니다.
     """)
@@ -72,37 +85,45 @@ else:
     else:
         st.session_state['activity_code'] = activity_code
 
-    # 교사가 주제를 입력
-    input_topic = st.text_input("📚 프롬프트 주제 또는 키워드를 입력하세요:", "")
+    # 교사가 프롬프트 생성 방법 선택
+    prompt_method = st.selectbox("프롬프트 생성 방법을 선택하세요:", ["직접 입력", "인공지능 도움 받기"])
 
-    if st.button("✨ 인공지능아 프롬프트를 만들어줘") and activity_code:
-        with st.spinner('🧠 프롬프트를 생성 중입니다...'):
-            # 교사의 입력을 바탕으로 GPT에게 Vision API를 활용한 프롬프트 생성 요청
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",  # 적절한 GPT 모델을 선택
-                messages=[
-                    {"role": "system", "content": "You are an AI that helps create system prompts for educational purposes using Vision API. Analyze the image content and create a prompt based on the visual elements."},
-                    {"role": "user", "content": f"The topic for the prompt is: {input_topic}. Use Vision API to generate a creative and educational system prompt based on this topic."}
-                ]
-            )
-            
-            # 생성된 프롬프트를 교사에게 보여주기
-            generated_prompt = response.choices[0].message.content.strip()
+    if prompt_method == "직접 입력":
+        # 교사가 직접 입력하는 경우 기본 예제를 제공
+        example_prompt = "예시: 너는 A활동을 돕는 보조교사 입니다. 학생이 B사진을 입력하면, 인공지능이 B를 분석하여 C를 할 수 있도록 도움을 주세요."
+        final_prompt = st.text_area("✏️ 직접 입력할 프롬프트:", example_prompt, height=300)
+    else:
+        # 교사가 주제를 입력
+        input_topic = st.text_input("📚 프롬프트 주제 또는 키워드를 입력하세요:", "")
 
-        # 교사가 프롬프트를 수정할 수 있도록 제공
-        final_prompt = st.text_area("✏️ 인공지능이 만든 프롬프트를 살펴보고 직접 수정하세요:", generated_prompt, height=300)
+        if st.button("✨ 인공지능아 프롬프트를 만들어줘") and activity_code:
+            with st.spinner('🧠 프롬프트를 생성 중입니다...'):
+                # 교사의 입력을 바탕으로 GPT에게 Vision API를 활용한 프롬프트 생성 요청
+                response = client.chat.completions.create(
+                    model="gpt-4o-mini",  # 적절한 GPT 모델을 선택
+                    messages=[
+                        {"role": "system", "content": "당신은 Vision API를 사용하여 교육 목적으로 시스템 프롬프트를 만드는 것을 돕는 AI입니다. 이미지의 시각적 요소를 분석하여 이에 기반한 프롬프트를 생성하세요."},
+                        {"role": "user", "content": f"프롬프트의 주제는: {input_topic}입니다. 이 주제를 바탕으로 Vision API를 사용하여 창의적이고 교육적인 시스템 프롬프트를 생성해 주세요."}
+                    ]
+                )
+                
+                # 생성된 프롬프트를 교사에게 보여주기
+                generated_prompt = response.choices[0].message.content.strip()
 
-        # final_prompt와 activity_code를 세션 상태에 저장
-        st.session_state['final_prompt'] = final_prompt
+            # 교사가 프롬프트를 수정할 수 있도록 제공
+            final_prompt = st.text_area("✏️ 인공지능이 만든 프롬프트를 살펴보고 직접 수정하세요:", generated_prompt, height=300)
+        else:
+            final_prompt = ""
 
+    # 프롬프트 저장 섹션
     if st.button("💾 프롬프트를 서버에 저장") and activity_code:
-        if 'final_prompt' in st.session_state:
+        if final_prompt:
             current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             with st.spinner('💾 데이터를 저장하는 중입니다...'):
                 st.info("✅ 모든 입력값이 유효합니다. 서버에 데이터를 추가하는 중입니다...")
 
                 try:
-                    worksheet.append_row([current_time, activity_code, st.session_state['final_prompt']])
+                    worksheet.append_row([current_time, activity_code, final_prompt])
                     st.success("🎉 프롬프트가 성공적으로 저장되었습니다.")
                 except Exception as e:
                     st.error(f"❌ 프롬프트 저장 중 오류가 발생했습니다: {e}")

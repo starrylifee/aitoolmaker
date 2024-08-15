@@ -31,6 +31,7 @@ hide_menu_style = """
     </script>
 """
 st.markdown(hide_menu_style, unsafe_allow_html=True)
+
 # OpenAI API 클라이언트 초기화
 client = OpenAI(api_key=st.secrets["api"]["keys"][0])
 
@@ -89,7 +90,7 @@ else:
 
     if option == "직접 입력":
         # 교사가 직접 입력하는 경우 기본 예제를 제공
-        example_prompt = "예시: 너는 A활동을 돕는 보조교사 입니다. 학생이 B를 입력하면, C를 할 수 있도록 도움을 주세요."
+        example_prompt = "예시: 너는 A활동을 돕는 보조교사 입니다. 학생이 B를 입력하면, 인공지능이 B를 분석하여 C를 할 수 있도록 도움을 주세요."
         final_prompt = st.text_area("✏️ 직접 입력할 프롬프트:", example_prompt, height=300)
     else:
         # 교사가 주제를 입력
