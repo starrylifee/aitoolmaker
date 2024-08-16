@@ -5,6 +5,12 @@ from googleapiclient.discovery import build
 from datetime import datetime
 import json
 
+# 페이지 설정 - 아이콘과 제목 설정
+st.set_page_config(
+    page_title="교사용 교육 도구 홈",  # 브라우저 탭에 표시될 제목
+    page_icon="🧑‍🏫",  # 브라우저 탭에 표시될 아이콘 (이모지 또는 이미지 파일 경로)
+)
+
 # Streamlit의 기본 메뉴와 푸터 숨기기
 hide_menu_style = """
     <style>
