@@ -77,12 +77,18 @@ else:
     3. **프롬프트 저장**: 입력한 프롬프트를 저장하여 서버에 추가합니다.
     """)
 
-    # 활동 코드 입력 (숫자 포함 여부 검사)
+    # 기존 활동 코드 리스트 가져오기
+    existing_codes = worksheet.col_values(2)  # 스프레드시트에서 두 번째 열의 모든 값을 가져옴
+
+    # 활동 코드 입력 (숫자 포함 여부 검사 및 중복 검사)
     activity_code = st.text_input("🔑 활동 코드 입력", value=st.session_state.get('activity_code', '')).strip()
     
     if any(char.isdigit() for char in activity_code):
         st.error("⚠️ 활동 코드에 숫자를 포함할 수 없습니다. 다시 입력해주세요.")
         activity_code = ""  # 잘못된 입력일 경우 초기화
+    elif activity_code in existing_codes:
+        st.error("⚠️ 이미 사용된 코드입니다. 다른 코드를 입력해주세요.")
+        activity_code = ""  # 중복된 경우 초기화
     else:
         st.session_state['activity_code'] = activity_code
 
