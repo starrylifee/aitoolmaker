@@ -94,42 +94,69 @@ else:
     # 교사가 프롬프트 생성 방법 선택
     prompt_method = st.selectbox("프롬프트 생성 방법을 선택하세요:", ["직접 입력", "인공지능 도움 받기"])
 
+    # session_state 초기화
+    if "direct_prompt" not in st.session_state:
+        st.session_state.direct_prompt = ""
+    if "ai_prompt" not in st.session_state:
+        st.session_state.ai_prompt = ""
+    if "final_prompt" not in st.session_state:
+        st.session_state.final_prompt = ""
+
+    # 최종 프롬프트 변수 초기화
+    final_prompt = ""
+
     if prompt_method == "직접 입력":
-        # 교사가 직접 입력하는 경우 기본 예제를 제공
+        # 직접 입력 프롬프트 처리
         example_prompt = "예시: 너는 A활동을 돕는 보조교사 입니다. 학생이 B사진을 입력하면, 인공지능이 B를 분석하여 C를 할 수 있도록 도움을 주세요."
-        final_prompt = st.text_area("✏️ 직접 입력할 프롬프트:", example_prompt, height=300)
-    else:
-        # 교사가 주제를 입력
+        st.session_state.direct_prompt = st.text_area("✏️ 직접 입력할 프롬프트:", example_prompt, height=300)
+        final_prompt = st.session_state.direct_prompt
+
+    elif prompt_method == "인공지능 도움 받기":
+        # 인공지능 프롬프트 생성 처리
         input_topic = st.text_input("📚 프롬프트 주제 또는 키워드를 입력하세요:", "")
 
         if st.button("✨ 인공지능아 프롬프트를 만들어줘") and activity_code:
-            with st.spinner('🧠 프롬프트를 생성 중입니다...'):
-                # 교사의 입력을 바탕으로 GPT에게 Vision API를 활용한 프롬프트 생성 요청
-                response = client.chat.completions.create(
-                    model="gpt-4o-mini",  # 적절한 GPT 모델을 선택
-                    messages=[
-                        {"role": "system", "content": "당신은 Vision API를 사용하여 교육 목적으로 시스템 프롬프트를 만드는 것을 돕는 AI입니다. 이미지의 시각적 요소를 분석하여 이에 기반한 프롬프트를 생성하세요."},
-                        {"role": "user", "content": f"프롬프트의 주제는: {input_topic}입니다. 이 주제를 바탕으로 Vision API를 사용하여 창의적이고 교육적인 시스템 프롬프트를 생성해 주세요."}
-                    ]
-                )
-                
-                # 생성된 프롬프트를 교사에게 보여주기
-                generated_prompt = response.choices[0].message.content.strip()
+            if input_topic.strip() == "":
+                st.error("⚠️ 주제를 입력하세요.")
+            else:
+                with st.spinner('🧠 프롬프트를 생성 중입니다...'):
+                    try:
+                        response = client.chat.completions.create(
+                            model="gpt-4o-mini",  # 적절한 GPT 모델을 선택
+                            messages=[
+                                {"role": "system", "content": "당신은 Vision API를 사용하여 교육 목적으로 시스템 프롬프트를 만드는 것을 돕는 AI입니다. 이미지의 시각적 요소를 분석하여 이에 기반한 프롬프트를 생성하세요."},
+                                {"role": "user", "content": f"프롬프트의 주제는: {input_topic}입니다. 이 주제를 바탕으로 Vision API를 사용하여 창의적이고 교육적인 시스템 프롬프트를 생성해 주세요."}
+                            ]
+                        )
+                        
+                        if response.choices and response.choices[0].message.content:
+                            st.session_state.ai_prompt = response.choices[0].message.content.strip()
+                        else:
+                            st.error("⚠️ 프롬프트 생성에 실패했습니다. 다시 시도해 주세요.")
+                            st.session_state.ai_prompt = ""
 
-            # 교사가 프롬프트를 수정할 수 있도록 제공
-            final_prompt = st.text_area("✏️ 인공지능이 만든 프롬프트를 살펴보고 직접 수정하세요:", generated_prompt, height=300)
-        else:
-            final_prompt = ""
+                    except Exception as e:
+                        st.error(f"⚠️ 프롬프트 생성 중 오류가 발생했습니다: {e}")
+                        st.session_state.ai_prompt = ""
 
-    # 프롬프트 저장 섹션
-    if st.button("💾 프롬프트를 서버에 저장") and activity_code:
-        if final_prompt:
+        # 인공지능 프롬프트가 생성된 경우에만 표시
+        if st.session_state.ai_prompt:
+            st.session_state.ai_prompt = st.text_area("✏️ 인공지능이 만든 프롬프트를 살펴보고 직접 수정하세요:", 
+                                                      value=st.session_state.ai_prompt, height=300)
+            final_prompt = st.session_state.ai_prompt
+
+    # 최종 프롬프트를 세션 상태에 저장
+    st.session_state.final_prompt = final_prompt
+
+    # 프롬프트 저장 섹션 (최종 프롬프트가 있는 경우에만 표시)
+    if st.session_state.final_prompt and st.button("💾 프롬프트를 서버에 저장") and activity_code:
+        if st.session_state.final_prompt.strip():  # 빈 문자열이 아닌 경우에만 처리
             current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             with st.spinner('💾 데이터를 저장하는 중입니다...'):
                 st.info("✅ 모든 입력값이 유효합니다. 서버에 데이터를 추가하는 중입니다...")
 
                 try:
-                    worksheet.append_row([current_time, activity_code, final_prompt])
+                    worksheet.append_row([current_time, activity_code, st.session_state.final_prompt])
                     st.success("🎉 프롬프트가 성공적으로 저장되었습니다.")
                 except Exception as e:
                     st.error(f"❌ 프롬프트 저장 중 오류가 발생했습니다: {e}")
