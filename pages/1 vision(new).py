@@ -8,7 +8,7 @@ import json
 
 # 페이지 설정 - 아이콘과 제목 설정
 st.set_page_config(
-    page_title="교사용 교육 도구 홈",  # 브라우저 탭에 표시될 제목
+    page_title="교사용 이미지 분석 프롬프트 생성 도구",  # 브라우저 탭에 표시될 제목
     page_icon="🧑‍🏫",  # 브라우저 탭에 표시될 아이콘 (이모지 또는 이미지 파일 경로)
 )
 
@@ -19,22 +19,6 @@ hide_menu_style = """
     footer {visibility: hidden;}
     header {visibility: hidden;}
     </style>
-    <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        var mainMenu = document.getElementById('MainMenu');
-        if (mainMenu) {
-            mainMenu.style.display = 'none';
-        }
-        var footer = document.getElementsByTagName('footer')[0];
-        if (footer) {
-            footer.style.display = 'none';
-        }
-        var header = document.getElementsByTagName('header')[0];
-        if (header) {
-            header.style.display = 'none';
-        }
-    });
-    </script>
 """
 st.markdown(hide_menu_style, unsafe_allow_html=True)
 
@@ -75,32 +59,24 @@ else:
     st.title("🎓 교사용 이미지 분석 프롬프트 생성 도구")
 
     st.markdown("""
-    **안내:** 이 도구를 사용하여 이미지 분석 API를 활용한 교육용 프롬프트를 쉽게 생성할 수 있습니다. 아래의 단계를 따라 입력해 주세요.
-    1. **활동 코드**: 학생들이 입력할 고유 코드를 설정합니다. (숫자는 포함할 수 없습니다.)
-    2. **프롬프트 주제**: 이미지 분석 API를 사용하여 생성할 프롬프트의 주제를 입력합니다.
-    3. **프롬프트 생성**: 인공지능이 생성한 프롬프트를 확인하고 필요에 따라 수정합니다.
-    4. **프롬프트 저장**: 최종 프롬프트를 저장하여 서버에 추가합니다.
+    **안내:** 이 도구를 사용하여 이미지 분석 API를 활용한 교육용 프롬프트를 쉽게 생성할 수 있습니다. 다음 중 하나의 방법을 선택하세요:
+    1. **샘플 프롬프트 이용하기**: 미리 준비된 샘플 프롬프트를 사용해 보세요.
+    2. **직접 프롬프트 만들기**: 프롬프트를 직접 작성하세요.
+    3. **인공지능 도움받기**: 인공지능의 도움을 받아 프롬프트를 생성하세요.
     """)
 
-    # 기존 활동 코드 리스트 가져오기
-    existing_codes = worksheet.col_values(2)  # 스프레드시트에서 두 번째 열의 모든 값을 가져옴
+    # 샘플 프롬프트 목록
+    sample_prompts = {
+        "사진 속 감정 분석": "사진 속 인물들의 감정을 분석하여 초등학생이 이해할 수 있도록 설명해 주세요.",
+        "풍경 사진 설명": "풍경 사진을 보고, 그 특징과 아름다움을 초등학생이 이해할 수 있도록 설명해 주세요.",
+        "동물 사진 설명": "동물 사진을 보고, 그 동물의 특성을 설명하고, 초등학생이 이해할 수 있도록 쉽게 풀어 설명해 주세요.",
+        "미술 작품 분석": "미술 작품 사진을 보고, 초등학생이 이해할 수 있도록 그 작품의 주요 특징을 설명해 주세요.",
+    }
 
-    # 활동 코드 입력 (숫자 포함 여부 검사 및 중복 검사)
-    activity_code = st.text_input("🔑 활동 코드 입력", value=st.session_state.get('activity_code', '')).strip()
-    
-    if any(char.isdigit() for char in activity_code):
-        st.error("⚠️ 활동 코드에 숫자를 포함할 수 없습니다. 다시 입력해주세요.")
-        activity_code = ""  # 잘못된 입력일 경우 초기화
-    elif activity_code in existing_codes:
-        st.error("⚠️ 이미 사용된 코드입니다. 다른 코드를 입력해주세요.")
-        activity_code = ""  # 중복된 경우 초기화
-    else:
-        st.session_state['activity_code'] = activity_code
+    # 프롬프트 생성 방법 선택
+    prompt_method = st.selectbox("프롬프트 생성 방법을 선택하세요:", ["샘플 프롬프트 이용하기", "직접 입력", "인공지능 도움 받기"])
 
-    # 교사가 프롬프트 생성 방법 선택
-    prompt_method = st.selectbox("프롬프트 생성 방법을 선택하세요:", ["직접 입력", "인공지능 도움 받기"])
-
-    # session_state 초기화
+    # 세션 상태 초기화
     if "direct_prompt" not in st.session_state:
         st.session_state.direct_prompt = ""
     if "ai_prompt" not in st.session_state:
@@ -108,20 +84,27 @@ else:
     if "final_prompt" not in st.session_state:
         st.session_state.final_prompt = ""
 
-    # 최종 프롬프트 변수 초기화
-    final_prompt = ""
+    # 샘플 프롬프트 이용하기
+    if prompt_method == "샘플 프롬프트 이용하기":
+        st.subheader("📚 샘플 프롬프트")
+        selected_sample = st.selectbox("샘플 프롬프트를 선택하세요:", ["선택하세요"] + list(sample_prompts.keys()))
 
-    if prompt_method == "직접 입력":
-        # 직접 입력 프롬프트 처리
+        if selected_sample != "선택하세요":
+            st.info(f"선택된 프롬프트: {sample_prompts[selected_sample]}")
+            st.session_state.direct_prompt = st.text_area("✏️ 샘플 프롬프트 수정 가능:", value=sample_prompts[selected_sample], height=300)
+            st.session_state.final_prompt = st.session_state.direct_prompt
+
+    # 직접 프롬프트 입력
+    elif prompt_method == "직접 입력":
         example_prompt = "예시: 너는 A활동을 돕는 보조교사 입니다. 학생이 B사진을 입력하면, 인공지능이 B를 분석하여 C를 할 수 있도록 도움을 주세요."
         st.session_state.direct_prompt = st.text_area("✏️ 직접 입력할 프롬프트:", example_prompt, height=300)
-        final_prompt = st.session_state.direct_prompt
+        st.session_state.final_prompt = st.session_state.direct_prompt
 
+    # 인공지능 도움 받기
     elif prompt_method == "인공지능 도움 받기":
-        # 인공지능 프롬프트 생성 처리
         input_topic = st.text_input("📚 프롬프트 주제 또는 키워드를 입력하세요:", "")
 
-        if st.button("✨ 인공지능아 프롬프트를 만들어줘") and activity_code:
+        if st.button("✨ 인공지능아 프롬프트를 만들어줘"):
             if input_topic.strip() == "":
                 st.error("⚠️ 주제를 입력하세요.")
             else:
@@ -149,14 +132,35 @@ else:
         if st.session_state.ai_prompt:
             st.session_state.ai_prompt = st.text_area("✏️ 인공지능이 만든 프롬프트를 살펴보고 직접 수정하세요:", 
                                                       value=st.session_state.ai_prompt, height=300)
-            final_prompt = st.session_state.ai_prompt
+            st.session_state.final_prompt = st.session_state.ai_prompt
 
     # 최종 프롬프트를 세션 상태에 저장
-    st.session_state.final_prompt = final_prompt
+    st.session_state.final_prompt = st.session_state.direct_prompt or st.session_state.ai_prompt
 
-    # 프롬프트 저장 섹션 (최종 프롬프트가 있는 경우에만 표시)
-    if st.session_state.final_prompt and st.button("💾 프롬프트를 서버에 저장") and activity_code:
-        if st.session_state.final_prompt.strip():  # 빈 문자열이 아닌 경우에만 처리
+    # 활동 코드 입력
+    if st.session_state.final_prompt:
+        st.subheader("🔑 활동 코드 설정")
+        activity_code = st.text_input("활동 코드를 입력하세요", value=st.session_state.get('activity_code', '')).strip()
+        
+        # if any(char.isdigit() for char in activity_code):  # 숫자 포함 검증 주석 처리
+        #     st.error("⚠️ 활동 코드에 숫자를 포함할 수 없습니다. 다시 입력해주세요.")
+        #     activity_code = ""  # 잘못된 입력일 경우 초기화
+        
+        if activity_code in worksheet.col_values(2):
+            st.error("⚠️ 이미 사용된 코드입니다. 다른 코드를 입력해주세요.")
+            activity_code = ""  # 중복된 경우 초기화
+        else:
+            st.session_state['activity_code'] = activity_code
+
+        st.markdown("**[https://students.streamlit.app/](https://students.streamlit.app/)** 에서 학생들이 이 활동 코드를 입력하면 해당 프롬프트를 불러올 수 있습니다.")
+
+    # 서버 저장 버튼은 항상 표시되며, 입력 검증 후 동작
+    if st.button("💾 프롬프트를 서버에 저장"):
+        if not st.session_state.final_prompt.strip():
+            st.error("⚠️ 프롬프트가 없습니다. 먼저 프롬프트를 생성하세요.")
+        elif not activity_code:
+            st.error("⚠️ 활동 코드를 입력하세요.")
+        else:
             current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             with st.spinner('💾 데이터를 저장하는 중입니다...'):
                 st.info("✅ 모든 입력값이 유효합니다. 서버에 데이터를 추가하는 중입니다...")
@@ -166,5 +170,3 @@ else:
                     st.success("🎉 프롬프트가 성공적으로 저장되었습니다.")
                 except Exception as e:
                     st.error(f"❌ 프롬프트 저장 중 오류가 발생했습니다: {e}")
-        else:
-            st.error("⚠️ 프롬프트가 없습니다. 먼저 프롬프트를 생성하세요.")
