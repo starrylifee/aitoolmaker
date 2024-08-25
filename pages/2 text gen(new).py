@@ -53,7 +53,7 @@ else:
     # 스프레드시트 ID로 열기
     spreadsheet_id = items[0]['id']
     spreadsheet = gc.open_by_key(spreadsheet_id)
-    worksheet = spreadsheet.sheet1
+    worksheet = spreadsheet.worksheet("시트2")
 
     # 교사용 인터페이스
     st.title("🎓 교사용 프롬프트 생성 도구")
@@ -145,15 +145,19 @@ else:
     if st.session_state.final_prompt:
         st.subheader("🔑 활동 코드 설정")
         activity_code = st.text_input("활동 코드를 입력하세요", value=st.session_state.get('activity_code', '')).strip()
-        
-        # if any(char.isdigit() for char in activity_code):
-        #     st.error("⚠️ 활동 코드에 숫자를 포함할 수 없습니다. 다시 입력해주세요.")
-        #     activity_code = ""  # 잘못된 입력일 경우 초기화
-        if activity_code in worksheet.col_values(2):
+
+        if activity_code.isdigit():
+            st.error("⚠️ 활동 코드는 숫자만으로 입력할 수 없습니다. 다시 입력해주세요.")
+            activity_code = ""  # 숫자만 입력된 경우 초기화
+        elif activity_code in worksheet.col_values(2):
             st.error("⚠️ 이미 사용된 코드입니다. 다른 코드를 입력해주세요.")
             activity_code = ""  # 중복된 경우 초기화
         else:
             st.session_state['activity_code'] = activity_code
+
+        # Email 및 Password 입력
+        email = st.text_input("Email (선택사항)", value=st.session_state.get('email', '')).strip()
+        password = st.text_input("Password (선택사항)", value=st.session_state.get('password', ''), type="password").strip()
 
         st.markdown("**[https://students.streamlit.app/](https://students.streamlit.app/)** 에서 학생들이 이 활동 코드를 입력하면 해당 프롬프트를 불러올 수 있습니다.")
 
@@ -163,13 +167,15 @@ else:
             st.error("⚠️ 프롬프트가 없습니다. 먼저 프롬프트를 생성하세요.")
         elif not activity_code:
             st.error("⚠️ 활동 코드를 입력하세요.")
+        elif password and password.isnumeric():
+            st.error("⚠️ 비밀번호는 숫자만 입력할 수 없습니다. 영문 또는 영문+숫자 조합을 사용하세요.")
         else:
             current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             with st.spinner('💾 데이터를 저장하는 중입니다...'):
                 st.info("✅ 모든 입력값이 유효합니다. 서버에 데이터를 추가하는 중입니다...")
 
                 try:
-                    worksheet.append_row([current_time, activity_code, st.session_state.final_prompt])
+                    worksheet.append_row([current_time, activity_code, st.session_state.final_prompt, email, password])
                     st.success("🎉 프롬프트가 성공적으로 저장되었습니다.")
                 except Exception as e:
                     st.error(f"❌ 프롬프트 저장 중 오류가 발생했습니다: {e}")
