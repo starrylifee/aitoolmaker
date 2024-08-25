@@ -143,9 +143,12 @@ else:
         st.subheader("🔑 활동 코드 설정")
         activity_code = st.text_input("활동 코드를 입력하세요", value=st.session_state.get('activity_code', '')).strip()
 
+        # 추가된 숫자만 입력된 경우 감지 로직
         if activity_code.isdigit():
             st.error("⚠️ 활동 코드는 숫자만으로 입력할 수 없습니다. 다시 입력해주세요.")
             activity_code = ""  # 숫자만 입력된 경우 초기화
+        elif not activity_code:  # 입력이 비어있거나 오류로 초기화된 경우 처리
+            pass
         elif activity_code in worksheet.col_values(2):
             st.error("⚠️ 이미 사용된 코드입니다. 다른 코드를 입력해주세요.")
             activity_code = ""  # 중복된 경우 초기화
@@ -157,6 +160,7 @@ else:
         password = st.text_input("Password (선택사항)", value=st.session_state.get('password', ''), type="password").strip()
 
         st.markdown("**[https://students.streamlit.app/](https://students.streamlit.app/)** 에서 학생들이 이 활동 코드를 입력하면 해당 프롬프트를 불러올 수 있습니다.")
+
 
     # 서버 저장 버튼은 항상 표시되며, 입력 검증 후 동작
     if st.button("💾 프롬프트를 서버에 저장"):
