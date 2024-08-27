@@ -208,5 +208,13 @@ else:
                 try:
                     worksheet.append_row([current_time, activity_code, st.session_state.final_prompt, email, password])
                     st.success("🎉 프롬프트가 성공적으로 저장되었습니다.")
+                    # 세션 상태 초기화
+                    st.session_state.direct_prompt = ""
+                    st.session_state.ai_prompt = ""
+                    st.session_state.final_prompt = ""
+                    st.session_state.activity_code = ""
+                    st.session_state.email = ""
+                    st.session_state.password = ""
+
                 except Exception as e:
                     st.error(f"❌ 프롬프트 저장 중 오류가 발생했습니다: {e}")
