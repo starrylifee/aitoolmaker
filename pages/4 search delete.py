@@ -10,7 +10,7 @@ st.set_page_config(
 )
 
 # Streamlit의 배경색 변경
-background_color = "#E0F7FA"  # 파스텔 블루
+background_color = "#F3E5F5"  # 연한 라벤더
 
 # Streamlit의 기본 메뉴와 푸터 숨기기
 hide_menu_style = """

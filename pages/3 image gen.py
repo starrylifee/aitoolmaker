@@ -11,6 +11,18 @@ st.set_page_config(
     page_icon="🧑‍🏫",  # 브라우저 탭에 표시될 아이콘 (이모지 또는 이미지 파일 경로)
 )
 
+# Streamlit의 배경색 변경
+background_color = "#C5E1A5"  # 파스텔 그린
+
+# 배경색 변경을 위한 CSS
+page_bg_css = f"""
+<style>
+    .stApp {{
+        background-color: {background_color};
+    }}
+</style>
+"""
+
 # Streamlit의 기본 메뉴와 푸터 숨기기
 hide_menu_style = """
     <style>
@@ -35,7 +47,10 @@ hide_menu_style = """
     });
     </script>
 """
+
+# Streamlit에서 HTML 및 CSS 적용
 st.markdown(hide_menu_style, unsafe_allow_html=True)
+st.markdown(page_bg_css, unsafe_allow_html=True)
 
 # Google Sheets 및 Google Drive API 인증 설정
 credentials_dict = json.loads(st.secrets["gcp"]["credentials"])

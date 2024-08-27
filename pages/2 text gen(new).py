@@ -12,6 +12,18 @@ st.set_page_config(
     page_icon="🧑‍🏫",  # 브라우저 탭에 표시될 아이콘 (이모지 또는 이미지 파일 경로)
 )
 
+# Streamlit의 배경색 변경
+background_color = "#E0F7FA"  # 파스텔 블루
+
+# 배경색 변경을 위한 CSS
+page_bg_css = f"""
+<style>
+    .stApp {{
+        background-color: {background_color};
+    }}
+</style>
+"""
+
 # Streamlit의 기본 메뉴와 푸터 숨기기
 hide_menu_style = """
     <style>
@@ -19,8 +31,27 @@ hide_menu_style = """
     footer {visibility: hidden;}
     header {visibility: hidden;}
     </style>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var mainMenu = document.getElementById('MainMenu');
+        if (mainMenu) {
+            mainMenu.style.display = 'none';
+        }
+        var footer = document.getElementsByTagName('footer')[0];
+        if (footer) {
+            footer.style.display = 'none';
+        }
+        var header = document.getElementsByTagName('header')[0];
+        if (header) {
+            header.style.display = 'none';
+        }
+    });
+    </script>
 """
+
+# Streamlit에서 HTML 및 CSS 적용
 st.markdown(hide_menu_style, unsafe_allow_html=True)
+st.markdown(page_bg_css, unsafe_allow_html=True)
 
 # OpenAI API 클라이언트 초기화
 client = OpenAI(api_key=st.secrets["api"]["keys"][0])
